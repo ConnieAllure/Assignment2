@@ -1,12 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
-  </head>
-  <body>
+<%- include("templates/header") %> 
     <h2>Successfully logged in <%= username %>!</h2>
     <% if (RE == 0) { %>
     <img src="./RE1.jpg" style="width: 250px" />
@@ -16,5 +8,4 @@
     <img src="./RE3.jpg" style="width: 250px" />
     <% } %>
     <h2><a href="/logout">Log Out</a></h2>
-  </body>
-</html>
+<%- include("templates/footer") %> 
