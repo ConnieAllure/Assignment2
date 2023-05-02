@@ -79,6 +79,25 @@ function sessionValidation(req,res,next) {
     }
 }
 
+function isAdmin(req) {
+    if (req.session.user_type == 'admin') {
+        return true;
+    }
+    return false;
+}
+
+function adminAuthorization(req, res, next) {
+    if (!isAdmin(req)) {
+        res.status(403);
+        res.render("errorMessage", {error: "Not Authorized"});
+        return;
+    }
+    else {
+        next();
+    }
+}
+
+
 app.get('/', isAuthenticated, (req,res) => {
     res.render("index");
 });
@@ -125,16 +144,7 @@ app.get('/loginErrorUser', (req,res) => {
 });
 
 app.get('/loginErrorPassword', (req,res) => {
-    var html = `
-    <h2>Log in</h2>
-    <form action='/loggingin' method='post'>
-    <input name='username' type='text' placeholder='username'></br>
-    <input name='password' type='password' placeholder='password'></br>
-    <button>Submit</button>
-    </form>
-    <h3 style='color:darkred;'>Incorrect Password</h3>
-    `;
-    res.send(html);
+    res.render("loginErrorPassword");
 });
 
 
@@ -157,7 +167,7 @@ app.post('/submitUser', async (req,res) => {
 
     var hashedPassword = await bcrypt.hash(password, saltRounds);
 
-	await userCollection.insertOne({username: username, password: hashedPassword});
+	await userCollection.insertOne({username: username, password: hashedPassword, user_type: "user"});
 	console.log("Inserted user");
 
     req.session.authenticated = true;
@@ -182,7 +192,7 @@ app.post('/loggingin', async (req,res) => {
 	   res.redirect("/login");
 	   return;
 	}
-    const result = await userCollection.find({username: username}).project({username: 1, password: 1, _id: 1}).toArray();
+    const result = await userCollection.find({username: username}).project({username: 1, password: 1, user_type: 1, _id: 1}).toArray();
 
     console.log(result);
 	if (result.length != 1) {
@@ -194,6 +204,7 @@ app.post('/loggingin', async (req,res) => {
 		console.log("correct password");
 		req.session.authenticated = true;
 		req.session.username = username;
+        req.session.user_type = result[0].user_type;
 		req.session.cookie.maxAge = expireTime;
 
 		res.redirect('/loggedIn');
@@ -259,7 +270,7 @@ app.get('/RE/:id', (req,res) => {
     res.render("RE  ", {RE: RE});
 });
 
-app.get('/admin', sessionValidation, async (req,res) => {
+app.get('/admin', sessionValidation, adminAuthorization, async (req,res) => {
     const result = await userCollection.find().project({username: 1, _id: 1}).toArray();
 
     res.render("admin", {users: result});
