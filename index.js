@@ -25,13 +25,18 @@ const mongodb_user = process.env.MONGODB_USER;
 const mongodb_password = process.env.MONGODB_PASSWORD;
 const mongodb_database = process.env.MONGODB_DATABASE;
 
+
 var {database} = include('databaseConnection');
+
 
 const userCollection = database.db(mongodb_database).collection('users');
 
+
 app.set('view engine', 'ejs');
 
+
 app.use(express.urlencoded({extended: false}));
+
 
 var mongoStore = MongoStore.create({
 	mongoUrl: `mongodb+srv://${mongodb_user}:${mongodb_password}@${mongodb_host}/test`,
@@ -41,6 +46,7 @@ var mongoStore = MongoStore.create({
 
 })
 
+
 app.use(session({ 
     secret: node_session_secret,
 	store: mongoStore,
@@ -49,6 +55,7 @@ app.use(session({
 }
 ));
 
+
 const isAuthenticated = (req, res, next) => {
     if (req.session.authenticated) {
         return res.redirect('/loggedin');
@@ -56,9 +63,11 @@ const isAuthenticated = (req, res, next) => {
     return next();
 };
 
+
 app.get('/', isAuthenticated, (req,res) => {
     res.render("index");
 });
+
 
 app.get('/nosql-injection', async (req,res) => {
 	var username = req.query.user;
@@ -85,42 +94,19 @@ app.get('/nosql-injection', async (req,res) => {
     res.send(`<h1>Hello ${username}</h1>`);
 });
 
+
 app.get('/createUser', (req,res) => {
-    var html = `
-    <h2>Create user</h2>
-    <form action='/submitUser' method='post'>
-    <input name='username' type='text' placeholder='username'></br>
-    <input name='password' type='password' placeholder='password'></br>
-    <button>Submit</button>
-    </form>
-    `;
-    res.send(html);
+    res.render("createUser");
 });
+
 
 app.get('/login', (req,res) => {
-
-    var html = `
-    <h2>Log in</h2>
-    <form action='/loggingin' method='post'>
-    <input name='username' type='text' placeholder='username'></br>
-    <input name='password' type='password' placeholder='password'></br>
-    <button>Submit</button>
-    </form>
-    `;
-    res.send(html);
+    res.render("login");
 });
 
+
 app.get('/loginErrorUser', (req,res) => {
-    var html = `
-    <h2>Log in</h2>
-    <form action='/loggingin' method='post'>
-    <input name='username' type='text' placeholder='username'></br>
-    <input name='password' type='password' placeholder='password'></br>
-    <button>Submit</button>
-    </form>
-    <h3 style='color:darkred;'>User not found</h3>
-    `;
-    res.send(html);
+    res.render("loginErrorUser");
 });
 
 app.get('/loginErrorPassword', (req,res) => {
@@ -166,6 +152,7 @@ app.post('/submitUser', async (req,res) => {
     res.redirect('/loggedin')
 });
 
+
 app.post('/loggingin', async (req,res) => {
     var username = req.body.username;
     var password = req.body.password;
@@ -204,47 +191,28 @@ app.post('/loggingin', async (req,res) => {
 	}
 });
 
-app.get('/loggedin', (req,res) => {
+
+app.get('/loggedin', (req, res) => {
     if (!req.session.authenticated) {
         res.redirect('/login');
-    }
-    var username = req.session.username;
-
-    var RE = Math.floor(Math.random() * 3);
-
-    var html = `
-    <h2>Successfully logged in
-    ` ;
-
-    var html2 = `
-    <h2><a href="/logout">Log Out</a></h2>    
-    `
-
-    if (RE == 0) {
-        res.send(html + username + "!</h2>" + "</br><img src='/RE1.jpg' style='width:250px;'></br>" + html2);
-    }
-    else if (RE == 1) {
-        res.send(html + username + "!</h2>" + "<img src='/RE2.png' style='width:250px;'></br>" + html2);
-    } 
-    else if (RE == 2) {
-        res.send(html + username + "!</h2>" + "<img src='/RE3.jpg' style='width:250px;'></br>" + html2);
+    } else {
+        var username = req.session.username;
+        var RE = Math.floor(Math.random() * 3);
+        var template = 'loggedin.ejs';
+        var data = {
+            username: username,
+            RE: RE
+        };
+        res.render(template, data);
     }
 });
+
 
 app.get('/contact', (req,res) => {
     var missingEmail = req.query.missing;
-    var html = `
-        email address:
-        <form action='/submitEmail' method='post'>
-            <input name='email' type='text' placeholder='email'>
-            <button>Submit</button>
-        </form>
-    `;
-    if (missingEmail) {
-        html += "<br> email is required";
-    }
-    res.send(html);
+    res.render("contact", {missing: missingEmail});
 });
+
 
 app.post('/email', (req,res) => {
     var email = req.body.email;
@@ -256,42 +224,29 @@ app.post('/email', (req,res) => {
     }
 });
 
+
 app.get('/logout', (req,res) => {
 	req.session.destroy();
     res.redirect('/');
 });
 
+
 app.get('/RE/:id', (req,res) => {
 
     var RE = req.params.id;
 
-    if (RE == 1) {
-        res.send("RE1: <img src='/RE1.jpg' style='width:250px;'>");
-    }
-    else if (RE == 2) {
-        res.send("RE2: <img src='/RE2.png' style='width:250px;'>");
-    } 
-    else if (RE == 3) {
-        res.send("RE3: <img src='/RE3.jpg' style='width:250px;'>");
-    }
-    else {
-        res.send("Invalid Resident evil game id: "+RE);
-    }
+    res.render("RE  ", {RE: RE});
 });
+
 
 app.use(express.static(__dirname + "/public"));
 
-app.use((req, res, next) => {
-    const err = new Error('Not Found');
-    err.status = 404;
-    next(err);
-});
 
-app.use((err, req, res, next) => {
-    const status = err.status || 500;
+app.get("*", (req,res) => {
+	res.status(404);
+	res.render("404");
+})
 
-    res.status(status).send(`Error ${status}: ${err.message}`);
-});
 
 app.listen(port, () => {
     console.log("Your Assignment 1 is listening on port "+port);
