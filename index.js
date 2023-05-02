@@ -63,6 +63,21 @@ const isAuthenticated = (req, res, next) => {
     return next();
 };
 
+function isValidSession(req) {
+    if (req.session.authenticated) {
+        return true;
+    }
+    return false;
+}
+
+function sessionValidation(req,res,next) {
+    if (isValidSession(req)) {
+        next();
+    }
+    else {
+        res.redirect('/login');
+    }
+}
 
 app.get('/', isAuthenticated, (req,res) => {
     res.render("index");
@@ -192,6 +207,7 @@ app.post('/loggingin', async (req,res) => {
 });
 
 
+app.use('/loggedin', sessionValidation);
 app.get('/loggedin', (req, res) => {
     if (!req.session.authenticated) {
         res.redirect('/login');
@@ -205,6 +221,11 @@ app.get('/loggedin', (req, res) => {
         };
         res.render(template, data);
     }
+});
+
+
+app.get('/loggedin/info', (req,res) => {
+    res.render("loggedin-info");
 });
 
 
@@ -238,7 +259,7 @@ app.get('/RE/:id', (req,res) => {
     res.render("RE  ", {RE: RE});
 });
 
-app.get('/admin', async (req,res) => {
+app.get('/admin', sessionValidation, async (req,res) => {
     const result = await userCollection.find().project({username: 1, _id: 1}).toArray();
 
     res.render("admin", {users: result});
