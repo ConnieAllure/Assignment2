@@ -29,6 +29,8 @@ var {database} = include('databaseConnection');
 
 const userCollection = database.db(mongodb_database).collection('users');
 
+app.set('view engine', 'ejs');
+
 app.use(express.urlencoded({extended: false}));
 
 var mongoStore = MongoStore.create({
@@ -55,13 +57,7 @@ const isAuthenticated = (req, res, next) => {
 };
 
 app.get('/', isAuthenticated, (req,res) => {
-
-    var html = `
-    <h2><a href="/createUser">Sign Up</a></br>
-    <a href="/login">Log In</a><h2>
-    `
-
-    res.send(html);
+    res.render("index");
 });
 
 app.get('/nosql-injection', async (req,res) => {
