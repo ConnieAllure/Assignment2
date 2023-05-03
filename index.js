@@ -182,9 +182,6 @@ app.post('/loggingin', async (req,res) => {
     var username = req.body.username;
     var password = req.body.password;
 
-    
-
-
     const schema = Joi.string().max(20).required();
 	const validationResult = schema.validate(username);
 	if (validationResult.error != null) {
@@ -224,11 +221,9 @@ app.get('/loggedin', (req, res) => {
         res.redirect('/login');
     } else {
         var username = req.session.username;
-        var RE = Math.floor(Math.random() * 3);
         var template = 'loggedin.ejs';
         var data = {
             username: username,
-            RE: RE
         };
         res.render(template, data);
     }
@@ -237,6 +232,11 @@ app.get('/loggedin', (req, res) => {
 
 app.get('/loggedin/info', (req,res) => {
     res.render("loggedin-info");
+});
+
+
+app.get('/about', (req,res) => {
+    res.render("about");
 });
 
 
@@ -253,6 +253,16 @@ app.post('/email', (req,res) => {
     }
     else {
         res.send("The email you input is: "+email);
+    }
+});
+
+app.post('/submitEmail', (req,res) => {
+    var email = req.body.email;
+    if (!email) {
+        res.redirect('/contact?missing=1');
+    }
+    else {
+        res.render("submitEmail", {email: email});
     }
 });
 
@@ -275,16 +285,34 @@ app.get('/admin', sessionValidation, adminAuthorization, async (req,res) => {
 
     res.render("admin", {users: result});
 });
+  
+app.post('/adminUser', sessionValidation, adminAuthorization, async (req,res) => {
+    const ObjectId = require('mongodb').ObjectId;
+    const userId = req.body.userId;
+    const userObjectId = new ObjectId(userId);
+    await userCollection.updateOne({_id: userObjectId}, {$set: {user_type: "admin"}});
+    console.log(userId)
+    res.redirect('/admin');
+  });
+
+  app.post('/unAdminUser', sessionValidation, adminAuthorization, async (req,res) => {
+    const ObjectId = require('mongodb').ObjectId;
+    const userId = req.body.userId;
+    const userObjectId = new ObjectId(userId);
+    await userCollection.updateOne({_id: userObjectId}, {$set: {user_type: "user"}});
+    console.log(userId)
+    res.redirect('/admin');
+  });
+
 
 app.use(express.static(__dirname + "/public"));
 
 
-app.get("*", (req,res) => {
-	res.status(404);
+app.get("*", (req,res) => {	res.status(404);
 	res.render("404");
 })
 
 
 app.listen(port, () => {
-    console.log("Your Assignment 1 is listening on port "+port);
+    console.log("Your Assignment 2 is listening on port "+port);
 })
