@@ -281,6 +281,9 @@ app.get('/RE/:id', (req,res) => {
 });
 
 app.get('/admin', sessionValidation, adminAuthorization, async (req,res) => {
+    if (!req.session.authenticated) {
+        res.redirect('/login');
+    }
     const result = await userCollection.find().project({username: 1, _id: 1}).toArray();
 
     res.render("admin", {users: result});
